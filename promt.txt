@@ -1,0 +1,77 @@
+Create a simple Flutter app that loads a mixed feed of posts and ads from my backend and supports cursor-based pagination.
+
+Use a single Flutter app package with a straightforward structure under `lib/`:
+
+lib/
+  main.dart
+  config/
+    api_config.dart
+  models/
+    feed_item.dart
+  services/
+    feed_service.dart
+  screens/
+    feed_screen.dart
+  widgets/
+    post_card.dart
+    ad_card.dart
+
+Keep the code easy to follow. Do not create a multi-package workspace or separate packages.
+
+API
+- Make requests to `{API_BASE_URL}/api/v1/feed`.
+- The default `API_BASE_URL` is `http://localhost:8080`.
+- Read `API_BASE_URL` using `String.fromEnvironment`, so I can supply it with `--dart-define` when running or building the app.
+- Use Dio for HTTP requests.
+- Put the Dio setup in one place and inject it into the feed service. Avoid creating the Dio client in a screen.
+
+Example commands:
+
+flutter run -d chrome \
+  --dart-define=API_BASE_URL=http://localhost:8080
+
+flutter build apk \
+  --dart-define=API_BASE_URL=https://api.example.com
+
+Feed response:
+
+{
+  "items": [
+    {
+      "type": "post",
+      "data": {
+        "id": "0192c5f4-7b2a-7abf-8def-1234567890ab",
+        "author": {
+          "id": "0192c5f4-7b2a-7abc-8def-1234567890ab",
+          "username": "alice",
+          "displayName": "Alice"
+        },
+        "content": "Post number 20",
+        "createdAt": "2026-10-18T12:00:00Z"
+      }
+    },
+    {
+      "type": "ad",
+      "data": {
+        "id": "0192c5f4-7b2a-7abe-8def-1234567890ab",
+        "advertiser": "Example Company",
+        "content": "Try our new product!",
+        "targetUrl": "https://example.com",
+        "createdAt": "2026-10-18T11:00:00Z"
+      }
+    }
+  ],
+  "nextCursor": "eyJzbmFwc2hvdCI6IjIwMjYtMTAtMThUMTI6MDA6MDBaIiwicG9zdEtleSI6Li4ufQ==",
+  "hasMore": true
+}
+
+Requirements:
+- Parse the response into typed Dart models. Represent posts and ads as distinct feed item types.
+- Display both types in the same scrolling feed, using a separate widget for each type.
+- Show suitable loading, empty, and error states.
+- Support cursor pagination: make the initial request without a cursor, then request subsequent pages using the returned `nextCursor` when `hasMore` is true.
+- Append later pages to the existing feed instead of replacing it.
+- Prevent duplicate simultaneous pagination requests and stop requesting when `hasMore` is false.
+- Show a loading indicator while fetching another page and provide a way to retry after an error.
+- Keep the cursor query parameter name configurable or clearly marked if the backend uses a different name. Assume it is `cursor` unless specified otherwise.
+- Do not hard-code secrets. The API base URL is a public configuration value and can be supplied through `--dart-define`.
